@@ -25,13 +25,9 @@ import (
 	"poly-bridge/chainsdk"
 
 	"github.com/ethereum/go-ethereum/common"
-	oksdk "github.com/okex/exchain-go-sdk"
-	"github.com/okex/exchain/app"
-	"github.com/okex/exchain/app/codec"
 	polysdk "github.com/polynetwork/poly-go-sdk"
 	"github.com/polynetwork/poly/native/service/header_sync/bsc"
 	"github.com/polynetwork/poly/native/service/header_sync/heco"
-	oktypes "github.com/tendermint/tendermint/types"
 )
 
 func SyncEthGenesisHeader2Poly(
@@ -176,44 +172,44 @@ func SyncHecoGenesisHeader2Poly(
 	return nil
 }
 
-type CosmosHeader struct {
-	Header  oktypes.Header
-	Commit  *oktypes.Commit
-	Valsets []*oktypes.Validator
-}
+//type CosmosHeader struct {
+//	Header  oktypes.Header
+//	Commit  *oktypes.Commit
+//	Valsets []*oktypes.Validator
+//}
 
 func SyncOKGenesisHeader2Poly(
 	sideChainID uint64,
-	client oksdk.Client,
+	//client oksdk.Client,
 	polySdk *chainsdk.PolySDK,
 	validators []*polysdk.Account,
-	epoch int64,
+	hexDec []byte,
 ) error {
-	cr, err := client.Tendermint().QueryCommitResult(epoch)
-	if err != nil {
-		return err
-	}
+	//cr, err := client.Tendermint().QueryCommitResult(epoch)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//valResult, err := client.Tendermint().QueryValidatorsResult(epoch)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//hdr := CosmosHeader{
+	//	Header:  *cr.Header,
+	//	Commit:  cr.Commit,
+	//	Valsets: valResult.Validators,
+	//}
+	//if len(valResult.Validators) == 0 {
+	//	return fmt.Errorf("Validators empty")
+	//}
+	//cdc := codec.MakeCodec(app.ModuleBasics)
+	//raw, err := cdc.MarshalBinaryBare(hdr)
+	//if err != nil {
+	//	return fmt.Errorf("MarshalBinaryBare:%v", err)
+	//}
 
-	valResult, err := client.Tendermint().QueryValidatorsResult(epoch)
-	if err != nil {
-		return err
-	}
-
-	hdr := CosmosHeader{
-		Header:  *cr.Header,
-		Commit:  cr.Commit,
-		Valsets: valResult.Validators,
-	}
-	if len(valResult.Validators) == 0 {
-		return fmt.Errorf("Validators empty")
-	}
-	cdc := codec.MakeCodec(app.ModuleBasics)
-	raw, err := cdc.MarshalBinaryBare(hdr)
-	if err != nil {
-		return fmt.Errorf("MarshalBinaryBare:%v", err)
-	}
-
-	if err := polySdk.SyncGenesisBlock(sideChainID, validators, raw); err != nil {
+	if err := polySdk.SyncGenesisBlock(sideChainID, validators, hexDec); err != nil {
 		return err
 	}
 

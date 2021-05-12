@@ -154,6 +154,11 @@ var (
 		Usage: "set okex epoch",
 		Value: 0,
 	}
+
+	HexFlag = cli.StringFlag{
+		Name: "hexfile",
+		Usage: "set ok hex file path",
+	}
 )
 
 var (
@@ -237,7 +242,7 @@ var (
 		Usage:  "sync side chain genesis header to poly chain.",
 		Action: handleCmdSyncSideChainGenesis2Poly,
 		Flags: []cli.Flag{
-			EpochFlag,
+			HexFlag,
 		},
 	}
 

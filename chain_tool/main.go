@@ -36,7 +36,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/polynetwork/poly/native/service/header_sync/bsc"
 	polyutils "github.com/polynetwork/poly/native/service/utils"
-	oksdk "github.com/okex/exchain-go-sdk"
 	"github.com/urfave/cli"
 )
 
@@ -46,7 +45,6 @@ var (
 	cc       *ChainConfig
 	storage  *leveldb.LevelDBImpl
 	sdk      *chainsdk.EthereumSdk
-	okclient oksdk.Client
 	adm      *ecdsa.PrivateKey
 	keystore string
 )
@@ -80,6 +78,7 @@ func setupApp() *cli.App {
 		AdminIndexFlag,
 		AddGasFlag,
 		EpochFlag,
+		HexFlag,
 	}
 	app.Commands = []cli.Command{
 		CmdSample,
@@ -138,16 +137,11 @@ func beforeCommands(ctx *cli.Context) (err error) {
 	chainID := ctx.GlobalUint64(getFlagName(ChainIDFlag))
 	selectChainConfig(chainID)
 
-	if _, err := os.Stat(cfg.Keystore); os.IsNotExist(err) {
-		return fmt.Errorf("keystore dir %s is not exist", cfg.Keystore)
+	fmt.Println("chainconfig", cc.RPC)
+	if _, err := os.Stat(cc.Keystore); os.IsNotExist(err) {
+		return fmt.Errorf("keystore dir %s is not exist", cc.Keystore)
 	}
-	keystore = cfg.Keystore
-	admIndex := ctx.GlobalInt(getFlagName(AdminIndexFlag))
-	if admIndex < 0 || admIndex >= len(cfg.AdminAccountList) {
-		return fmt.Errorf("admin index out of range")
-	}
-	admAddr := cfg.AdminAccountList[admIndex]
-	if adm, err = wallet.LoadEthAccount(storage, keystore, admAddr, defaultAccPwd); err != nil {
+	if adm, err = wallet.LoadEthAccount(storage, cc.Keystore, cc.Admin, defaultAccPwd); err != nil {
 		return fmt.Errorf("load eth account for chain %d faild, err: %v", cc.SideChainID, err)
 	}
 
@@ -156,13 +150,10 @@ func beforeCommands(ctx *cli.Context) (err error) {
 		chainsdk.DefaultAddGasPrice = new(big.Int).SetUint64(uAddGas * 1000000000)
 	}
 
-	if chainID == basedef.OK_CROSSCHAIN_ID {
-		okconfig, _ := oksdk.NewClientConfig(cc.RPC, "okexchain-65", oksdk.BroadcastBlock, "0.01okt", 200000, 0, "")
-		okclient = oksdk.NewClient(okconfig)
+	if sdk, err = chainsdk.NewEthereumSdk(cc.RPC); err != nil {
+		return fmt.Errorf("generate sdk for chain %d faild, err: %v", cc.SideChainID, err)
 	} else {
-		if sdk, err = chainsdk.NewEthereumSdk(cc.RPC); err != nil {
-			return fmt.Errorf("generate sdk for chain %d faild, err: %v", cc.SideChainID, err)
-		}
+		log.Info("instance side chain sdk success %s", cc.RPC)
 	}
 
 	return nil
@@ -374,8 +365,12 @@ func handleCmdSyncSideChainGenesis2Poly(ctx *cli.Context) error {
 	case basedef.HECO_CROSSCHAIN_ID:
 		err = SyncHecoGenesisHeader2Poly(cc.SideChainID, sdk, polySdk, validators)
 	case basedef.OK_CROSSCHAIN_ID:
-		epoch := flag2Uint64(ctx, EpochFlag)
-		err = SyncOKGenesisHeader2Poly(cc.SideChainID, okclient, polySdk, validators, int64(epoch))
+		hexpath := flag2string(ctx, HexFlag)
+		dec, err := files.ReadHexFile(hexpath)
+		if err != nil {
+			return err
+		}
+		err = SyncOKGenesisHeader2Poly(cc.SideChainID, polySdk, validators, dec)
 	default:
 		err = fmt.Errorf("chain id %d invalid", cc.SideChainID)
 	}

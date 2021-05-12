@@ -15,6 +15,7 @@ import (
 )
 
 func LoadEthAccount(storage *leveldb.LevelDBImpl, keystore string, address string, pwd string) (*ecdsa.PrivateKey, error) {
+	fmt.Println("--------", keystore, address)
 	filepath := path.Join(keystore, address)
 	enc, err := ioutil.ReadFile(filepath)
 	if err != nil {

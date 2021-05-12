@@ -210,6 +210,7 @@ func (s *PolySDK) waitPolyTx(hash common.Uint256) error {
 		startTime = time.Now()
 	)
 
+	log.Info("wait poly tx %s", hash.ToHexString())
 	for range tick.C {
 		h, _ = s.sdk.GetBlockHeightByTxHash(hash.ToHexString())
 		curr, _ := s.sdk.GetCurrentBlockHeight()

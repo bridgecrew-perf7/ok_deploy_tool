@@ -1,6 +1,7 @@
 package files
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -14,6 +15,19 @@ func ReadJsonFile(path string, ptr interface{}) error {
 	}
 
 	return json.Unmarshal(enc, ptr)
+}
+
+func ReadHexFile(path string) ([]byte, error) {
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	dec, err := hex.DecodeString(string(raw))
+	if err != nil {
+		return nil, err
+	}
+	return dec, nil
 }
 
 // WriteJsonFile encode struct instance to bytes and persis in file
